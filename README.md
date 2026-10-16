@@ -15,7 +15,7 @@ current styles and a screenshot with your mark drawn in red.
 [![Next.js App Router](https://img.shields.io/badge/Next.js-App%20Router-18181b.svg)](https://nextjs.org/docs/app)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind%20CSS-v4-18181b.svg)](https://tailwindcss.com)
 
-[Website and live playground](https://adigold.github.io/AAT-Tool/) · [Install](#install) · [How it works](#how-it-works) · [The prompt](#what-the-prompt-looks-like) · [Safety](#safe-by-design)
+[Website and live playground](https://aat-tool.netlify.app/) · [Install](#install) · [How it works](#how-it-works) · [The prompt](#what-the-prompt-looks-like) · [Safety](#safe-by-design)
 
 <br />
 

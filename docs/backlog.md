@@ -7,12 +7,13 @@ After adding an item run `node ~/.claude/scripts/backlog-linear.mjs --send`; `--
 
 ## Inbox
 
-- [ ] **BL-5** `P1 · Medium` **Publish:** push to github.com/adigold/AAT-Tool, enable GitHub Pages (Actions), set the repo description, website and topics. Waiting for Adi to say push.
+- [ ] **BL-5** `P1 · Medium` **Publish:** push to github.com/adigold/AAT-Tool, enable GitHub Pages (Actions) or keep Netlify only, set the repo description, website and topics. Waiting for Adi to say push.
 
 ## Now
 
 ## Done
 
+- [x] **BL-6** `P1 · High` **Netlify deploy:** deploy site/ to a new Netlify project (aat-tool.netlify.app or close) so Adi can see it live. Adi, 2026-10-16. Live at https://aat-tool.netlify.app (Netlify project aat-tool, AGsoundtrax Team). · done 2026-10-16
 - [x] **BL-4** `P1 · High` **Live playground, logo, neo-brutalist restyle:** full AAT widget running on a demo admin dashboard on the landing page, grayscale neo-brutalist look (reference: marjoballabani.me), and a logo. Adi, 2026-10-16. · done 2026-10-16
 - [x] **BL-3** `P1 · High` **Demo video (HyperFrames):** short demo of pin, comment and prompt, no music, plays once (no loop), as MP4 and GIF for the README and the landing page. Adi, 2026-10-16. · done 2026-10-16
 - [x] **BL-2** `P1 · High` **Landing page:** one-page, minimal, bright, not AI-slop, built from LANDING_PAGE_PRD.md, with a demo of how AAT works. Adi, 2026-10-16. · done 2026-10-16
