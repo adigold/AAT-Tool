@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>AAT demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #f6f6f7; }
+      #root {
+        position: relative; width: 100%; height: 100%; overflow: hidden;
+        font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #18181b;
+        background-color: #f6f6f7;
+        background-image: radial-gradient(#d9d9de 1.6px, transparent 1.7px);
+        background-size: 32px 32px;
+      }
+      .mono { font-family: "JetBrains Mono", "Courier New", monospace; }
+      svg.i { display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* Top bar: captions left, wordmark right */
+      #topbar { position: absolute; left: 160px; right: 160px; top: 0; height: 150px; }
+      .cap { position: absolute; left: 0; top: 50px; display: flex; align-items: center; gap: 18px; font-size: 38px; font-weight: 700; letter-spacing: -0.02em; opacity: 0; }
+      .cap .num { width: 48px; height: 48px; border-radius: 50%; background: #ef4444; color: #fff; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(239,68,68,.35); display: grid; place-items: center; font-size: 22px; font-weight: 700; letter-spacing: 0; }
+      .cap .soft { color: #71717a; font-weight: 400; }
+      #mark { position: absolute; right: 0; top: 56px; display: flex; align-items: center; gap: 10px; font-size: 32px; font-weight: 900; letter-spacing: -0.03em; }
+      #mark i { width: 14px; height: 14px; border-radius: 50%; background: #ef4444; display: block; }
+
+      /* Browser window */
+      #win { position: absolute; left: 160px; top: 150px; width: 1600px; height: 880px; border-radius: 20px; background: #fff; border: 2px solid #e4e4e7; box-shadow: 0 40px 80px -30px rgba(24,24,27,.28); overflow: hidden; }
+      #chrome { height: 60px; border-bottom: 2px solid #ececef; background: #fafafa; display: flex; align-items: center; padding: 0 24px; gap: 10px; }
+      #chrome .dot { width: 16px; height: 16px; border-radius: 50%; background: #e4e4e7; }
+      #url { margin-left: 24px; height: 36px; flex: 0 0 560px; border-radius: 10px; background: #fff; border: 2px solid #ececef; display: flex; align-items: center; padding: 0 16px; font-size: 19px; color: #52525b; }
+      #cam { position: absolute; inset: 0; }
+      #vp { position: relative; height: 816px; overflow: hidden; background: #fff; }
+
+      /* Sample app */
+      #nav { height: 84px; display: flex; align-items: center; padding: 0 56px; gap: 40px; border-bottom: 2px solid #f4f4f5; font-size: 21px; color: #52525b; }
+      #nav b { color: #18181b; font-size: 27px; font-weight: 900; letter-spacing: -0.03em; margin-right: 12px; }
+      #nav .r { margin-left: auto; margin-right: 70px; color: #18181b; }
+      #hero { text-align: center; padding-top: 44px; }
+      #hero h1 { font-size: 56px; font-weight: 700; letter-spacing: -0.035em; }
+      #hero p { margin-top: 10px; font-size: 23px; color: #52525b; }
+      #cards { position: absolute; left: 150px; top: 270px; display: flex; gap: 32px; }
+      .card { position: relative; width: 400px; height: 470px; border: 2px solid #ececef; border-radius: 22px; padding: 36px 34px; background: #fff; }
+      .card h3 { font-size: 24px; font-weight: 700; }
+      .card .price { margin-top: 14px; font-size: 58px; font-weight: 700; letter-spacing: -0.04em; }
+      .card .price span { font-size: 22px; color: #71717a; font-weight: 400; letter-spacing: 0; }
+      .card ul { list-style: none; margin-top: 18px; font-size: 20px; color: #52525b; line-height: 1.9; }
+      .card .btn { position: absolute; left: 34px; bottom: 36px; height: 54px; padding: 0 26px; border-radius: 12px; display: flex; align-items: center; font-size: 20px; font-weight: 700; }
+      .btn.ghost { border: 2px solid #e4e4e7; color: #18181b; }
+      #cta { background: #18181b; color: #fff; transform-origin: left center; }
+      #cta-bg { position: absolute; inset: 0; border-radius: 12px; background: #2563eb; opacity: 0; }
+      #cta span { position: relative; }
+      .pop { position: absolute; top: -16px; right: 26px; font-size: 16px; font-weight: 700; padding: 6px 14px; border-radius: 99px; background: #f4f4f5; color: #52525b; }
+
+      /* AAT tray */
+      #trayCol { position: absolute; right: 22px; top: 0; bottom: 0; display: flex; align-items: center; }
+      .pill { background: #18181b; border-radius: 99px; padding: 7px; display: flex; flex-direction: column; align-items: center; gap: 5px; box-shadow: 0 14px 36px -12px rgba(0,0,0,.5); }
+      #trayOpen { position: absolute; right: 0; top: 50%; opacity: 0; }
+      .tb { position: relative; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; color: rgba(255,255,255,.85); }
+      .tb .act { position: absolute; inset: 0; border-radius: 50%; background: #fff; opacity: 0; }
+      .tb svg { position: relative; }
+      .tb .badge { position: absolute; right: -2px; top: -2px; min-width: 30px; height: 30px; padding: 0 7px; border-radius: 99px; background: #ef4444; color: #fff; font-size: 19px; font-weight: 700; display: grid; place-items: center; opacity: 0; }
+      .div { width: 30px; height: 2px; background: rgba(255,255,255,.15); margin: 2px 0; }
+
+      /* AAT overlays */
+      #hintWrap { position: absolute; left: 0; right: 0; top: 22px; display: flex; justify-content: center; }
+      #hint { background: #18181b; color: #fff; font-size: 20px; font-weight: 700; padding: 12px 24px; border-radius: 99px; opacity: 0; box-shadow: 0 10px 24px -8px rgba(0,0,0,.4); }
+      .ol { position: absolute; border-radius: 5px; outline: 3px solid #ef4444; background: rgba(239,68,68,.08); opacity: 0; }
+      .ol span { position: absolute; left: -3px; top: -34px; background: #ef4444; color: #fff; font-size: 16px; font-weight: 700; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+      #pin { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: #ef4444; border: 3px solid #fff; color: #fff; font-size: 21px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(239,68,68,.45); opacity: 0; }
+      #comp { position: absolute; width: 560px; border-radius: 20px; border: 2px solid #ececef; background: #fff; overflow: hidden; box-shadow: 0 30px 70px -24px rgba(24,24,27,.45); opacity: 0; }
+      #comp .hd { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 2px solid #ececef; font-size: 19px; color: #52525b; }
+      #comp .hd .n { width: 34px; height: 34px; border-radius: 50%; background: #ef4444; color: #fff; font-size: 19px; font-weight: 700; display: grid; place-items: center; }
+      #comp .hd .x { margin-left: auto; color: #a1a1aa; }
+      #comp .ta { position: relative; height: 118px; padding: 16px 18px; font-size: 22px; line-height: 1.45; }
+      #ph { position: absolute; left: 18px; top: 16px; color: #a1a1aa; }
+      #typed { position: relative; }
+      #caret { display: inline-block; width: 2px; height: 26px; background: #18181b; vertical-align: -5px; margin-left: 1px; }
+      #comp .ft { position: relative; height: 46px; border-top: 2px solid #ececef; background: #fafafa; font-size: 16px; color: #71717a; }
+      #comp .ft > div { position: absolute; left: 18px; top: 0; bottom: 0; display: flex; align-items: center; gap: 10px; }
+      #busy { color: #52525b; opacity: 0; }
+      #key { position: absolute; padding: 10px 18px; border-radius: 12px; background: #fff; border: 2px solid #e4e4e7; border-bottom-width: 5px; font-size: 20px; font-weight: 700; color: #18181b; opacity: 0; }
+      #toast { position: absolute; right: 108px; bottom: 34px; width: 560px; display: flex; gap: 16px; padding: 20px 22px; border-radius: 16px; background: #fff; border: 2px solid #ececef; box-shadow: 0 20px 50px -20px rgba(24,24,27,.4); opacity: 0; }
+      #toast b { display: block; font-size: 21px; }
+      #toast p { margin-top: 4px; font-size: 18px; line-height: 1.4; color: #52525b; }
+
+      /* Cursor */
+      #cur { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+      #arrow, #cross { position: absolute; left: 0; top: 0; }
+      #cross { opacity: 0; }
+      #ripple { position: absolute; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 3px solid #ef4444; opacity: 0; }
+
+      /* Prompt view */
+      #pv { position: absolute; left: 160px; top: 150px; width: 1600px; height: 880px; border-radius: 20px; background: #fff; border: 2px solid #e4e4e7; box-shadow: 0 40px 80px -30px rgba(24,24,27,.28); overflow: hidden; opacity: 0; }
+      #pv .bar { height: 60px; border-bottom: 2px solid #ececef; background: #fafafa; display: flex; align-items: center; gap: 12px; padding: 0 26px; font-size: 19px; font-weight: 700; color: #52525b; }
+      #pv .bar .tag { margin-left: auto; font-weight: 400; color: #71717a; }
+      #pv .body { display: flex; gap: 40px; padding: 26px 36px 0 30px; }
+      #ptext { width: 1040px; font-size: 17.5px; line-height: 1.56; color: #3f3f46; white-space: pre-wrap; }
+      #ptext .ln { position: relative; display: block; padding: 0 8px; border-radius: 6px; }
+      #ptext .hl { position: absolute; inset: 0; border-radius: 6px; background: rgba(239,68,68,.12); transform-origin: left center; transform: scaleX(0); }
+      #ptext .t { position: relative; }
+      #ptext .head { color: #18181b; font-weight: 700; }
+      #shot { width: 420px; flex: 0 0 420px; }
+      #shot .img { position: relative; height: 250px; border-radius: 14px; border: 2px solid #ececef; background: #fff; overflow: hidden; }
+      #shot .img .b { position: absolute; left: 110px; top: 98px; height: 54px; padding: 0 26px; border-radius: 12px; background: #18181b; color: #fff; display: flex; align-items: center; font-size: 20px; font-weight: 700; }
+      #shot .img .f { position: absolute; left: 26px; top: 26px; right: 26px; font-size: 17px; color: #71717a; line-height: 1.9; }
+      #shot svg.mk { position: absolute; left: 0; top: 0; }
+      #shot .cap2 { margin-top: 14px; font-size: 17px; color: #71717a; line-height: 1.5; }
+      #shot .cap2 b { color: #18181b; }
+
+      /* End card */
+      #end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      #endIn { opacity: 0; display: flex; flex-direction: column; align-items: center; }
+      #end .wm { display: flex; align-items: center; gap: 14px; font-size: 44px; font-weight: 900; letter-spacing: -0.03em; }
+      #end .wm i { width: 18px; height: 18px; border-radius: 50%; background: #ef4444; display: block; }
+      #end h2 { margin-top: 40px; font-size: 92px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.08; }
+      #end h2 .w { position: relative; display: inline-block; }
+      #end h2 svg { position: absolute; left: -30px; top: -24px; }
+      #end p { margin-top: 42px; font-size: 32px; color: #52525b; }
+      #end p b { color: #18181b; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="24" data-width="1920" data-height="1080">
+      <div id="stage" class="clip" data-start="0" data-duration="24" data-track-index="0" style="position:absolute;inset:0">
+        <div id="topbar">
+          <div class="cap" id="c0"><span>AAT, on your own app.</span><span class="soft">Admins only.</span></div>
+          <div class="cap" id="c1"><span class="num">1</span><span>Pin any element</span></div>
+          <div class="cap" id="c2"><span class="num">2</span><span>Say what should change</span></div>
+          <div class="cap" id="c3"><span class="num">3</span><span>The prompt is on your clipboard</span></div>
+          <div class="cap" id="c4"><span>Exact elements, styles and a marked screenshot</span></div>
+          <div class="cap" id="c5"><span class="num">4</span><span>Paste it. Your agent makes the change.</span></div>
+          <div id="mark"><i></i>AAT</div>
+        </div>
+
+        <div id="win">
+          <div id="chrome" data-layout-allow-occlusion><span class="dot"></span><span class="dot"></span><span class="dot"></span><div id="url">localhost:3000/pricing</div></div>
+          <div id="vp" data-layout-allow-occlusion><div id="cam" data-layout-allow-overlap data-layout-allow-occlusion>
+            <div id="nav" data-layout-allow-occlusion><b>Acme</b><span>Product</span><span>Pricing</span><span>Docs</span><span class="r">Sign in</span></div>
+            <div id="hero"><h1 id="h1">Simple pricing</h1><p>Start free. Upgrade when you grow.</p></div>
+            <div id="cards" data-layout-allow-occlusion>
+              <div class="card"><h3>Starter</h3><div class="price">$0<span> /mo</span></div><ul><li>1 project</li><li>Community support</li><li>Basic analytics</li></ul><div class="btn ghost">Get started</div></div>
+              <div class="card" id="pro"><span class="pop">Popular</span><h3 id="proH">Pro</h3><div class="price">$29<span> /mo</span></div><ul><li>Unlimited projects</li><li>Priority support</li><li>Advanced analytics</li></ul><div class="btn" id="cta"><div id="cta-bg"></div><span>Start free trial</span></div></div>
+              <div class="card"><h3>Team</h3><div class="price">$79<span> /mo</span></div><ul><li>Everything in Pro</li><li>5 seats included</li><li>SSO and audit log</li></ul><div class="btn ghost">Contact sales</div></div>
+            </div>
+
+            <!-- AAT -->
+            <div class="ol" id="olH"><span>h3</span></div>
+            <div class="ol" id="olB"><span>button.inline-flex</span></div>
+            <div id="hintWrap"><div id="hint">Click any element to pin a note · Esc to stop</div></div>
+            <div id="pin" data-layout-allow-occlusion>1</div>
+            <div id="comp" data-layout-allow-occlusion>
+              <div class="hd"><span class="n">1</span><span>&lt;button&gt; "Start free trial"</span><svg class="i x" width="20" height="20" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></div>
+              <div class="ta"><span id="ph">What should change here?</span><span id="typed"></span><span id="caret"></span></div>
+              <div class="ft"><div id="hintFt">Enter to copy the prompt · Shift+Enter for a new line</div><div id="busy"><svg class="i" id="spin" width="18" height="18" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Taking the screenshot…</div></div>
+            </div>
+            <div id="key" data-layout-allow-occlusion>Enter ⏎</div>
+            <div id="toast" data-layout-allow-occlusion>
+              <svg class="i" width="28" height="28" viewBox="0 0 24 24" style="flex:0 0 28px;margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              <div><b>Note 1 copied</b><p>Prompt copied, with the screenshot saved in the project. Paste it into Claude.</p></div>
+            </div>
+            <div id="trayCol">
+              <div style="position:relative">
+                <div class="pill" id="trayClosed"><div class="tb" id="tbOpen"><svg class="i" width="26" height="26" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg></div></div>
+                <div class="pill" id="trayOpen">
+                  <div class="tb" id="tbPin"><span class="act" id="pinAct"></span><svg class="i" id="pinIco" width="26" height="26" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></div>
+                  <div class="tb"><svg class="i" width="26" height="26" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg></div>
+                  <div class="tb"><svg class="i" width="26" height="26" viewBox="0 0 24 24"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></svg><span class="badge" id="badge">1</span></div>
+                  <span class="div"></span>
+                  <div class="tb"><svg class="i" width="26" height="26" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="cur">
+              <div id="ripple"></div>
+              <svg id="arrow" width="34" height="40" viewBox="0 0 34 40"><path d="M3 2 L3 31 L10.5 24 L15.5 35.5 L21 33 L16 22 L26 22 Z" fill="#18181b" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+              <svg id="cross" width="40" height="40" viewBox="0 0 40 40" style="left:-20px;top:-20px"><path d="M20 4v13M20 23v13M4 20h13M23 20h13" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M20 4v13M20 23v13M4 20h13M23 20h13" stroke="#18181b" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+          </div></div>
+        </div>
+
+        <div id="pv" data-layout-allow-overlap>
+          <div class="bar"><svg class="i" width="22" height="22" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Your clipboard<span class="tag">plain text, ready for Claude Code, Cursor or Codex</span></div>
+          <div class="body">
+            <div id="ptext" class="mono"><span class="ln head"><span class="t">[AAT note 1] Change request for my app</span></span><span class="ln"><span class="t"> </span></span><span class="ln"><span class="t">I pinned one element on the page and wrote a comment about it.</span></span><span class="ln"><span class="t"> </span></span><span class="ln" id="lnC"><span class="hl"></span><span class="t">My comment: Make this button bigger and use our brand color</span></span><span class="ln"><span class="t"> </span></span><span class="ln"><span class="t">Page: http://localhost:3000/pricing ("Pricing")</span></span><span class="ln"><span class="t">Viewport: 1440x900</span></span><span class="ln" id="lnS"><span class="hl"></span><span class="t">Screenshot of the marked spot, with my mark drawn in red: .data/aat/aat-m2x9k1-4f2a.png</span></span><span class="ln"><span class="t"> </span></span><span class="ln"><span class="t">Element: &lt;button&gt; "Start free trial"</span></span><span class="ln" id="lnSel"><span class="hl"></span><span class="t">  Selector: main &gt; section:nth-of-type(2) &gt; div &gt; button</span></span><span class="ln" id="lnR"><span class="hl"></span><span class="t">  React components (innermost first): Button &lt; PricingCard &lt; PricingPage</span></span><span class="ln"><span class="t">  Attributes: type="button"</span></span><span class="ln"><span class="t">  Classes: rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white</span></span><span class="ln"><span class="t">  Size: 148x36px at x 812, y 640 (page)</span></span><span class="ln" id="lnSt"><span class="hl"></span><span class="t">  Current style: font: Inter 14px, weight 500, line-height 20px; color: #ffffff; background: #18181b; padding: 8px 16px; radius: 8px</span></span><span class="ln"><span class="t"> </span></span><span class="ln"><span class="t">Find these elements in the codebase (search for the visible text, the React component names and the classes), make the change my comment asks for, and keep everything else exactly as it is. If the comment is unclear, ask me before changing anything.</span></span></div>
+            <div id="shot">
+              <div class="img">
+                <div class="f"><div>Unlimited projects</div><div>Priority support</div></div>
+                <div class="b">Start free trial</div>
+                <svg class="mk" width="420" height="250" viewBox="0 0 420 250"><rect id="mkRect" x="99" y="87" width="216" height="76" rx="12" fill="none" stroke="#ef4444" stroke-width="5"/></svg>
+              </div>
+              <div class="cap2"><b>The screenshot</b>, cropped around your mark with the mark drawn in red. On localhost it is saved into your project.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="end">
+          <div id="endIn">
+            <div class="wm"><i></i>AAT</div>
+            <h2><span class="w">Point<svg width="272" height="150" viewBox="0 0 310 150" preserveAspectRatio="none"><path id="loop" d="M40 92 C 20 40, 120 14, 190 18 C 270 22, 300 60, 282 96 C 262 134, 150 140, 82 124 C 40 114, 18 96, 44 70" fill="none" stroke="#ef4444" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/></svg></span> at your app.</h2>
+            <h2 style="margin-top:6px">Get a prompt your agent can act on.</h2>
+            <p>Open source, MIT · <b>github.com/adigold/AAT-Tool</b></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // The app page is deliberately covered by AAT's own UI (comment card, pin, toast, zoom).
+      document.querySelectorAll("#nav *, #cards *").forEach((el) => el.setAttribute("data-layout-allow-occlusion", ""));
+      function build() {
+        const vp = document.getElementById("vp");
+        // Position inside the app viewport, from layout offsets (not affected by transforms).
+        const pos = (el) => { let x = 0, y = 0, n = el; while (n && n !== vp) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; } return { x, y, w: el.offsetWidth, h: el.offsetHeight }; };
+        const center = (el) => { const p = pos(el); return { x: p.x + p.w / 2, y: p.y + p.h / 2 }; };
+        const fit = (ol, el) => { const p = pos(el); gsap.set(ol, { left: p.x - 4, top: p.y - 4, width: p.w + 8, height: p.h + 8 }); };
+
+        const btnOpen = center(document.getElementById("tbOpen"));
+        const btnPin = center(document.getElementById("tbPin"));
+        const cta = pos(document.getElementById("cta"));
+        const click = { x: cta.x + cta.w - 12, y: cta.y + cta.h - 12 };
+        fit("#olH", document.getElementById("proH"));
+        fit("#olB", document.getElementById("cta"));
+        gsap.set("#pin", { left: click.x, top: click.y });
+        gsap.set("#comp", { left: click.x + 26, top: click.y - 250 });
+        gsap.set("#key", { left: click.x + 430, top: click.y - 70 });
+        gsap.set("#trayOpen", { yPercent: -50 });
+        gsap.set("#cam", { transformOrigin: `${click.x + 300}px ${click.y - 40}px` });
+
+        const tl = gsap.timeline({ paused: true });
+        const caps = ["#c0", "#c1", "#c2", "#c3", "#c4", "#c5"];
+        const cap = (id, t, out) => {
+          tl.fromTo(id, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, t);
+          if (out) tl.to(id, { opacity: 0, y: -10, duration: 0.3, ease: "power2.in" }, out);
+        };
+        const move = (x, y, t, d = 0.8) => tl.to("#cur", { x, y, duration: d, ease: "power2.inOut" }, t);
+        const press = (t) => {
+          tl.to("#arrow, #cross", { scale: 0.85, duration: 0.08, ease: "power1.out", transformOrigin: "0 0" }, t)
+            .to("#arrow, #cross", { scale: 1, duration: 0.14, ease: "power1.out" }, t + 0.08)
+            .fromTo("#ripple", { opacity: 0.9, scale: 0.3 }, { opacity: 0, scale: 1.4, duration: 0.5, ease: "power2.out" }, t);
+        };
+
+        // 0. The app, with the AAT tray on the right edge
+        tl.fromTo("#win", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.1);
+        tl.fromTo("#mark", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.6, ease: "power2.out" }, 0.3);
+        cap("#c0", 0.4, 2.8);
+        tl.fromTo("#cur", { x: 1240, y: 760, opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.9);
+        move(btnOpen.x - 4, btnOpen.y - 6, 1.0, 0.9);
+        press(2.0);
+        tl.to("#trayClosed", { opacity: 0, scale: 0.8, duration: 0.2, ease: "power2.in" }, 2.05);
+        tl.fromTo("#trayOpen", { opacity: 0, scaleY: 0.55 }, { opacity: 1, scaleY: 1, duration: 0.4, ease: "back.out(1.6)", transformOrigin: "50% 50%" }, 2.1);
+
+        // 1. Pin mode
+        move(btnPin.x - 4, btnPin.y - 6, 2.6, 0.55);
+        press(3.2);
+        tl.to("#pinAct", { opacity: 1, duration: 0.15 }, 3.22).to("#pinIco", { color: "#18181b", duration: 0.15 }, 3.22);
+        cap("#c1", 3.2, 6.1);
+        tl.fromTo("#hint", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 3.35);
+        tl.to("#arrow", { opacity: 0, duration: 0.1 }, 3.5).to("#cross", { opacity: 1, duration: 0.1 }, 3.5);
+        const h = center(document.getElementById("proH"));
+        move(h.x + 10, h.y, 3.55, 0.75);
+        tl.to("#olH", { opacity: 1, duration: 0.12 }, 4.15).to("#olH", { opacity: 0, duration: 0.1 }, 4.75);
+        move(click.x, click.y, 4.7, 0.7);
+        tl.to("#olB", { opacity: 1, duration: 0.12 }, 5.3);
+        press(5.95);
+        tl.to("#olB", { opacity: 0, duration: 0.15 }, 6.0);
+        tl.to("#hint", { opacity: 0, duration: 0.2 }, 6.0);
+        tl.fromTo("#pin", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.2)" }, 6.0);
+        tl.fromTo("#comp", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" }, 6.1);
+        tl.to("#cross", { opacity: 0, duration: 0.2 }, 6.3);
+
+        // 2. Write the comment (camera leans in)
+        tl.to("#cam", { scale: 1.16, duration: 0.8, ease: "power2.inOut" }, 6.0);
+        cap("#c2", 6.4, 9.9);
+        const text = "Make this button bigger and use our brand color";
+        const typed = document.getElementById("typed");
+        const ph = document.getElementById("ph");
+        const st = { n: 0 };
+        tl.to(st, {
+          n: text.length, duration: 2.3, ease: "none",
+          onUpdate: () => { const k = Math.round(st.n); typed.textContent = text.slice(0, k); ph.style.opacity = k ? 0 : 1; },
+        }, 6.6);
+        tl.fromTo("#key", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" }, 9.15)
+          .to("#key", { y: 3, duration: 0.08 }, 9.45).to("#key", { y: 0, duration: 0.1 }, 9.53)
+          .to("#key", { opacity: 0, duration: 0.2 }, 9.9);
+        tl.to("#caret", { opacity: 0, duration: 0.05 }, 9.5);
+        tl.to("#hintFt", { opacity: 0, duration: 0.1 }, 9.5).to("#busy", { opacity: 1, duration: 0.1 }, 9.5);
+        tl.to("#spin", { rotation: 720, duration: 0.8, ease: "none", transformOrigin: "50% 50%" }, 9.5);
+
+        // 3. Saved: toast, badge, camera back
+        tl.to("#comp", { opacity: 0, y: 8, duration: 0.2, ease: "power2.in" }, 10.25);
+        tl.to("#cam", { scale: 1, duration: 0.7, ease: "power2.inOut" }, 10.2);
+        tl.fromTo("#toast", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 10.45);
+        tl.fromTo("#badge", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 10.45);
+        cap("#c3", 10.3, 11.95);
+        tl.to("#cur", { opacity: 0, duration: 0.2 }, 10.3);
+
+        // The prompt itself
+        tl.to("#win", { opacity: 0, scale: 0.96, duration: 0.45, ease: "power2.in" }, 12.0);
+        tl.fromTo("#pv", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 12.2);
+        tl.fromTo("#ptext .ln", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.035, ease: "power2.out" }, 12.4);
+        cap("#c4", 12.4, 17.15);
+        ["#lnC", "#lnS", "#lnSel", "#lnR", "#lnSt"].forEach((id, i) => {
+          tl.to(`${id} .hl`, { scaleX: 1, duration: 0.45, ease: "power2.out" }, 13.6 + i * 0.6);
+        });
+        tl.fromTo("#mkRect", { strokeDasharray: 600, strokeDashoffset: 600 }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut" }, 14.3);
+
+        // 4. Paste: the agent makes the change
+        tl.to("#pv", { opacity: 0, y: 30, duration: 0.4, ease: "power2.in" }, 17.2);
+        tl.to("#toast", { opacity: 0, duration: 0.01 }, 17.2);
+        tl.to("#win", { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" }, 17.4);
+        cap("#c5", 17.5, 20.3);
+        tl.to("#cta", { scale: 1.28, duration: 0.6, ease: "back.out(1.4)" }, 18.4);
+        // The pin follows its element, like in AAT.
+        tl.to("#pin", { x: (click.x - cta.x) * 0.28, y: (click.y - cta.y - cta.h / 2) * 0.28, duration: 0.6, ease: "back.out(1.4)" }, 18.4);
+        tl.to("#cta-bg", { opacity: 1, duration: 0.5, ease: "power1.out" }, 18.45);
+
+        // End card
+        tl.to("#win", { opacity: 0, y: -20, duration: 0.5, ease: "power2.in" }, 20.3);
+        tl.to("#mark", { opacity: 0, duration: 0.3 }, 20.3);
+        tl.fromTo("#endIn", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 20.75);
+        tl.fromTo("#loop", { strokeDasharray: 900, strokeDashoffset: 900 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 21.4);
+
+        window.__timelines["main"] = tl;
+      }
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(build); else build();
+    </script>
+  </body>
+</html>

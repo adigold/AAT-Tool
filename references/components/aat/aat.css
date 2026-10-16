@@ -1,0 +1,6 @@
+/* AAT (Admin Annotation Tool): the few styles Tailwind classes cannot carry. Scoped to AAT nodes. */
+[data-aat] button { cursor: pointer; }
+.aat-pop { animation: aat-pop 0.14s ease-out; }
+@keyframes aat-pop { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+.aat-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.aat-scroll::-webkit-scrollbar-thumb { background: #e4e4e7; border-radius: 10px; border: 3px solid #fff; }

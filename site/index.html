@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AAT, the Admin Annotation Tool</title>
+  <meta name="description" content="Point at your app. Get a prompt your coding agent can act on." />
+  <meta property="og:title" content="AAT, the Admin Annotation Tool" />
+  <meta property="og:description" content="Point at your app. Get a prompt your coding agent can act on." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://adigold.github.io/AAT-Tool/" />
+  <meta property="og:image" content="https://adigold.github.io/AAT-Tool/assets/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #fafafa; --paper: #ffffff; --chip: #f4f4f5; --soft: #e4e4e7; --grid: #ebebee;
+      --ink: #18181b; --ink2: #3f3f46; --mute: #71717a; --red: #ef4444; --red-soft: rgba(239,68,68,.08);
+      --bw: 3px; --sh: 6px 6px 0 var(--ink); --sh-sm: 4px 4px 0 var(--ink); --sh-lg: 10px 10px 0 var(--ink);
+      --head: "Space Grotesk", Inter, system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0; color: var(--ink); font: 16.5px/1.6 var(--head); -webkit-font-smoothing: antialiased;
+      background-color: var(--bg);
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--red); outline-offset: 3px; border-radius: 6px; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    .narrow { max-width: 720px; }
+    .skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: #fff; padding: 8px 14px; z-index: 10; }
+    .skip:focus { left: 16px; }
+
+    /* Shared neo shapes */
+    .box { background: var(--paper); border: var(--bw) solid var(--ink); border-radius: 12px; box-shadow: var(--sh); }
+    .press { transition: transform .12s ease, box-shadow .12s ease; }
+    .press:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+    .press:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+
+    /* Top bar */
+    header { position: sticky; top: 0; z-index: 5; padding: 16px 0 0; }
+    header .bar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 10px; }
+    .wm { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; letter-spacing: -0.02em; text-decoration: none; }
+    .wm img { display: block; }
+    .wm-sub { font-weight: 500; color: var(--mute); margin-left: 4px; }
+    @media (max-width: 640px) { .wm-sub { display: none; } }
+    .wm .sq { position: relative; width: 40px; height: 40px; border-radius: 8px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; letter-spacing: .02em; }
+    .wm .sq i { position: absolute; right: -5px; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+    .nav { display: flex; align-items: center; gap: 6px; }
+    .nav a.t { font-weight: 500; font-size: 15px; text-decoration: none; padding: 8px 12px; border-radius: 8px; }
+    .nav a.t:hover { background: var(--chip); }
+    .gh { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; text-decoration: none; padding: 8px 14px; border: var(--bw) solid var(--ink); border-radius: 10px; background: var(--paper); box-shadow: var(--sh-sm); }
+    .gh svg { width: 18px; height: 18px; }
+    @media (max-width: 640px) { .nav a.t { display: none; } }
+
+    /* Hero */
+    .hero { padding: 72px 0 40px; display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+    .hi { font-size: 18px; font-weight: 700; color: var(--mute); }
+    h1 { margin: 10px 0 0; font-size: clamp(40px, 5.6vw, 62px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 700; }
+    .circled { position: relative; display: inline-block; white-space: nowrap; }
+    .circled svg { position: absolute; left: -9%; top: -14%; width: 118%; height: 134%; overflow: visible; pointer-events: none; }
+    .circled path { fill: none; stroke: var(--red); stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; opacity: .85; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1s .45s cubic-bezier(.65,0,.35,1) forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) { .circled path { animation: none; stroke-dashoffset: 0; } }
+    .sub { margin: 22px 0 0; max-width: 520px; font-size: 18px; color: var(--ink2); }
+    .ctas { margin-top: 30px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 700; font-size: 16px; padding: 13px 22px; border: var(--bw) solid var(--ink); border-radius: 10px; box-shadow: 5px 5px 0 #a1a1aa; }
+    .btn:hover { box-shadow: 7px 7px 0 #a1a1aa; }
+    .btn svg { width: 18px; height: 18px; }
+    .btn.ghost { background: var(--paper); color: var(--ink); box-shadow: var(--sh-sm); }
+    .btn.ghost:hover { box-shadow: 6px 6px 0 var(--ink); }
+
+    /* Hero art: a tiny AAT scene built in HTML */
+    .art { position: relative; height: 380px; }
+    .art .win { position: absolute; left: 0; right: 28px; top: 20px; bottom: 30px; overflow: hidden; }
+    .art .chrome { height: 38px; border-bottom: var(--bw) solid var(--ink); display: flex; align-items: center; gap: 7px; padding: 0 12px; background: var(--chip); }
+    .art .chrome b { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: #fff; }
+    .art .chrome span { margin-left: 8px; font: 12px var(--mono); color: var(--mute); }
+    .art .pg { padding: 22px 22px 0; }
+    .art .ln { height: 12px; border-radius: 6px; background: var(--soft); margin-bottom: 10px; }
+    .art .h { height: 22px; width: 62%; background: var(--ink); border-radius: 6px; margin-bottom: 16px; }
+    .art .cta { position: relative; display: inline-block; margin-top: 12px; padding: 9px 16px; border-radius: 8px; background: var(--ink); color: #fff; font-weight: 700; font-size: 14px; }
+    .art .mark { position: absolute; inset: -7px; border: 3px solid var(--red); border-radius: 12px; }
+    .art .pin { position: absolute; right: -12px; top: -12px; }
+    .art .tray { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: var(--ink); border-radius: 99px; padding: 5px; display: grid; gap: 4px; border: var(--bw) solid var(--ink); box-shadow: var(--sh-sm); }
+    .art .tray b { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: rgba(255,255,255,.85); }
+    .art .tray b.on { background: #fff; color: var(--ink); }
+    .art .tray svg { width: 16px; height: 16px; }
+    .art .note { position: absolute; left: 34%; bottom: 0; width: 62%; padding: 12px 14px; font-size: 14px; }
+    .art .note .hd { display: flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--mute); margin-bottom: 6px; }
+    .art .note p { margin: 0; font-weight: 500; }
+    .art .note .ok { position: absolute; right: -14px; top: -16px; background: var(--paper); border: var(--bw) solid var(--ink); border-radius: 8px; padding: 2px 10px; font-size: 12.5px; font-weight: 700; box-shadow: 3px 3px 0 var(--ink); transform: rotate(3deg); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; padding: 8px 0 0; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 700; padding: 8px 14px; background: var(--paper); border: var(--bw) solid var(--ink); border-radius: 10px; box-shadow: var(--sh-sm); }
+    .chip svg { width: 16px; height: 16px; }
+
+    /* Demo video */
+    .demo { margin-top: 64px; }
+    .frame { position: relative; padding: 10px; border-radius: 16px; box-shadow: var(--sh-lg); }
+    .frame video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 8px; border: 2px solid var(--ink); background: #f6f6f7; }
+    .replay { position: absolute; right: 24px; bottom: 24px; display: inline-flex; align-items: center; gap: 7px; font: 700 14px var(--head); color: var(--ink); background: #fff; border: var(--bw) solid var(--ink); border-radius: 10px; box-shadow: var(--sh-sm); padding: 7px 13px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .replay.show { opacity: 1; pointer-events: auto; }
+    .replay svg { width: 15px; height: 15px; }
+    .caption { margin-top: 18px; text-align: center; font-size: 14px; color: var(--mute); }
+
+    /* Sections */
+    section { padding: 112px 0 0; }
+    .tag { display: inline-block; font-size: 22px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; padding: 6px 16px; background: var(--chip); border: var(--bw) solid var(--ink); border-radius: 8px; box-shadow: var(--sh-sm); }
+    h2 { margin: 26px 0 0; font-size: clamp(30px, 4.2vw, 44px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; }
+    .lead { margin: 12px 0 0; color: var(--ink2); font-size: 17.5px; max-width: 640px; }
+
+    /* Steps */
+    .steps { margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .step { padding: 24px 24px 26px; }
+    .pin { width: 28px; height: 28px; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid #fff; box-shadow: 0 0 0 2px var(--ink); display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+    .step h3 { margin: 16px 0 6px; font-size: 20px; letter-spacing: -0.02em; }
+    .step p { margin: 0; color: var(--ink2); }
+
+    /* Try it */
+    .try { margin-top: 44px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border-radius: 16px; box-shadow: var(--sh-lg); }
+    .try-stage { position: relative; background: #fff; border-right: var(--bw) solid var(--ink); height: 560px; overflow: hidden; }
+    .try-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
+    .aat-layer { position: absolute; inset: 0; pointer-events: none; font-family: Inter, system-ui, sans-serif; }
+    .aat-layer > * { pointer-events: auto; }
+    .aat-layer .hov, .aat-layer .hintpill { pointer-events: none; }
+    .aat-pen { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; display: none; }
+    .aat-pen-on .aat-pen { display: block; }
+    .aat-pins { position: absolute; inset: 0; pointer-events: none; }
+    .aat-dot { pointer-events: auto; cursor: pointer; padding: 0; }
+    .aat-tray { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; background: #18181b; border-radius: 99px; padding: 4px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.45); }
+    .aat-tray button { position: relative; width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: transparent; color: rgba(255,255,255,.85); cursor: pointer; }
+    .aat-tray button:hover { background: rgba(255,255,255,.12); color: #fff; }
+    .aat-tray button[aria-pressed="true"] { background: #fff; color: #18181b; }
+    .aat-div { width: 20px; height: 1px; background: rgba(255,255,255,.15); margin: 2px 0; }
+    .tray-n { position: absolute; right: -2px; top: -2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: var(--red); color: #fff; font-size: 10px; font-weight: 600; display: grid; place-items: center; }
+    .composer .x { margin-left: auto; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: #a1a1aa; display: grid; place-items: center; cursor: pointer; flex: 0 0 24px; }
+    .composer .x:hover { background: #f4f4f5; color: #18181b; }
+    .aat-panel { position: absolute; right: 60px; top: 50%; transform: translateY(-50%); width: min(320px, calc(100% - 76px)); max-height: calc(100% - 32px); display: flex; flex-direction: column; background: #fff; color: #18181b; border: 1px solid #ececef; border-radius: 16px; box-shadow: 0 24px 60px -20px rgba(24,24,27,.45); overflow: hidden; animation: pop .14s ease-out; }
+    .aat-panel .hd { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ececef; font-size: 13px; }
+    .aat-panel .seg { margin-left: auto; display: flex; background: #f4f4f5; border-radius: 9px; padding: 2px; }
+    .aat-panel .seg button { border: 0; background: transparent; font: 500 11.5px Inter, sans-serif; color: #52525b; padding: 3px 8px; border-radius: 7px; cursor: pointer; }
+    .aat-panel .seg button.on { background: #fff; color: #18181b; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+    .aat-panel .x { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: #a1a1aa; display: grid; place-items: center; cursor: pointer; }
+    .aat-panel .list { overflow-y: auto; min-height: 0; flex: 1; }
+    .aat-panel .empty { padding: 32px 16px; text-align: center; font-size: 13px; color: #a1a1aa; }
+    .aat-panel .row { display: flex; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #ececef; }
+    .aat-panel .row .n { flex: 0 0 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff; font-size: 10px; font-weight: 600; display: grid; place-items: center; }
+    .aat-panel .row .m { min-width: 0; flex: 1; }
+    .aat-panel .row .c { font-size: 13px; line-height: 1.45; word-break: break-word; }
+    .aat-panel .row .k { margin-top: 2px; font-size: 11.5px; color: #a1a1aa; }
+    .aat-panel .acts { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .aat-panel .sb { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #ececef; background: #fff; border-radius: 8px; padding: 3px 8px; font: 500 11.5px Inter, sans-serif; color: #52525b; cursor: pointer; }
+    .aat-panel .sb:hover { background: #fafafa; color: #18181b; }
+    .aat-panel .sb.danger:hover { color: #dc2626; background: #fef2f2; border-color: #fecaca; }
+    .aat-panel .ft { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-top: 1px solid #ececef; background: #fafafa; }
+    .aat-panel .dark { display: inline-flex; align-items: center; gap: 6px; border: 0; background: #18181b; color: #fff; border-radius: 9px; padding: 6px 10px; font: 500 12px Inter, sans-serif; cursor: pointer; }
+    .aat-panel .clr { margin-left: auto; border: 0; background: transparent; font: 12px Inter, sans-serif; color: #a1a1aa; cursor: pointer; }
+    .aat-panel .clr:hover { color: #18181b; }
+    .aat-toasts { position: absolute; left: 12px; bottom: 12px; right: 64px; pointer-events: none; }
+    .aat-toast { pointer-events: auto; max-width: 340px; background: #fff; border: 1px solid #ececef; border-radius: 12px; box-shadow: 0 16px 40px -16px rgba(24,24,27,.4); padding: 12px 14px; animation: pop .14s ease-out; }
+    .aat-toast b { font-size: 13.5px; }
+    .aat-toast p { margin: 2px 0 0; font-size: 12.5px; color: #52525b; line-height: 1.4; }
+    .aat-toast p:empty { display: none; }
+    .aat-toast .copy { margin-top: 8px; }
+    .outshot { margin-top: 12px; display: flex; align-items: flex-end; gap: 10px; }
+    .outshot[hidden] { display: none; }
+    .outshot img { max-width: 70%; max-height: 140px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; }
+    .hintpill { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); white-space: nowrap; background: var(--ink); color: #fff; font-size: 12.5px; font-weight: 500; padding: 6px 12px; border-radius: 99px; pointer-events: none; }
+    .hov { position: absolute; pointer-events: none; outline: 2px solid var(--red); background: var(--red-soft); border-radius: 3px; display: none; }
+    .hov span { position: absolute; left: -2px; top: -21px; background: var(--red); color: #fff; font: 500 10.5px Inter, sans-serif; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+    .dot { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; color: #fff; font: 600 11px Inter, sans-serif; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(239,68,68,.45); pointer-events: none; }
+    .composer { position: absolute; width: min(300px, calc(100% - 24px)); background: #fff; border: 1px solid #ececef; border-radius: 14px; box-shadow: 0 18px 50px -18px rgba(24,24,27,.45); overflow: hidden; animation: pop .14s ease-out; font-family: Inter, sans-serif; }
+    @keyframes pop { from { opacity: 0; transform: translateY(4px); } }
+    .composer .hd { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #ececef; font-size: 12px; color: #52525b; }
+    .composer .hd .n { width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff; font-size: 10px; font-weight: 600; display: grid; place-items: center; flex: 0 0 20px; }
+    .composer .hd span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .composer textarea { display: block; width: 100%; border: 0; resize: none; padding: 10px 12px; font: 13.5px/20px Inter, sans-serif; color: var(--ink); outline: none; }
+    .composer .ft { border-top: 1px solid #ececef; background: #fafafa; padding: 6px 12px; font-size: 11px; color: var(--mute); }
+    .try-out { position: relative; padding: 16px 18px 18px 20px; display: flex; flex-direction: column; height: 560px; background: var(--paper); }
+    .try-out .bar { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .copy { font: 700 13px var(--head); color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: 8px; padding: 3px 10px; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); }
+    .copy:active { transform: translate(2px, 2px); box-shadow: none; }
+    .copy:disabled { color: var(--mute); border-color: var(--soft); box-shadow: none; cursor: default; }
+    .try-out pre { flex: 1; min-height: 0; margin: 0; font: 12px/1.6 var(--mono); color: var(--ink2); white-space: pre-wrap; word-break: break-word; overflow: auto; }
+    .try-out pre .empty { color: var(--mute); font: 15px/1.6 var(--head); }
+    .note { margin-top: 20px; font-size: 14px; color: var(--mute); }
+
+    /* Prompt */
+    .code { margin-top: 36px; overflow: hidden; border-radius: 16px; box-shadow: var(--sh-lg); }
+    .code .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: var(--bw) solid var(--ink); background: var(--chip); font-size: 14px; font-weight: 700; }
+    .code .bar .dots { display: inline-flex; gap: 7px; margin-right: 12px; vertical-align: -1px; }
+    .code .bar .dots b { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: #fff; }
+    .code pre { margin: 0; padding: 22px 24px; font: 13px/1.75 var(--mono); color: var(--ink2); white-space: pre-wrap; word-break: break-word; }
+    .code pre b { color: var(--ink); font-weight: 500; }
+    .code pre mark { background: rgba(239,68,68,.1); color: inherit; border-radius: 4px; padding: 1px 3px; box-shadow: inset 0 -2px 0 rgba(239,68,68,.45); }
+    .quote { margin: 26px 0 0; font-size: 19px; font-weight: 700; }
+
+    /* Features */
+    .feats { margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .feat { padding: 22px 22px 24px; }
+    .feat .ic { width: 44px; height: 44px; border-radius: 10px; border: var(--bw) solid var(--ink); background: var(--chip); display: grid; place-items: center; }
+    .feat svg { width: 20px; height: 20px; }
+    .feat h3 { margin: 16px 0 4px; font-size: 18px; letter-spacing: -0.015em; }
+    .feat p { margin: 0; color: var(--ink2); font-size: 15.5px; }
+
+    /* Install */
+    .shell { margin-top: 30px; border-radius: 12px; background: var(--ink); color: #e4e4e7; font: 13.5px/1.7 var(--mono); padding: 20px 22px; position: relative; overflow-x: auto; border: var(--bw) solid var(--ink); box-shadow: 6px 6px 0 #a1a1aa; }
+    .shell .p { color: #71717a; user-select: none; }
+    .shell .copy { position: absolute; right: 10px; top: 10px; background: #27272a; color: #e4e4e7; border-color: #52525b; box-shadow: none; }
+    .ask { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--ink2); }
+    .ask code { font: 14px var(--mono); color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 8px; padding: 6px 10px; box-shadow: 3px 3px 0 var(--ink); }
+    .small { margin-top: 22px; font-size: 15px; color: var(--mute); }
+    .small a { color: var(--ink); font-weight: 700; }
+
+    footer { margin-top: 120px; padding-bottom: 32px; }
+    footer .bar { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 18px 22px; font-size: 15px; }
+    footer a { font-weight: 700; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; }
+      .art { height: 340px; }
+    }
+    @media (max-width: 860px) {
+      .steps, .feats { grid-template-columns: 1fr; gap: 20px; }
+      .try { grid-template-columns: 1fr; }
+      .try-stage { border-right: 0; border-bottom: var(--bw) solid var(--ink); height: 520px; }
+      .try-out { height: auto; min-height: 300px; }
+      section { padding-top: 80px; }
+    }
+    @media (max-width: 480px) {
+      :root { --sh: 4px 4px 0 var(--ink); --sh-lg: 6px 6px 0 var(--ink); }
+      .wrap { padding: 0 16px; }
+      .frame { padding: 6px; }
+      .replay { right: 14px; bottom: 14px; }
+      .hintpill { font-size: 11px; }
+      .art .note { left: 18%; width: 78%; }
+      .tag { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header id="top">
+    <div class="wrap">
+      <div class="bar box">
+        <a class="wm" href="#top" aria-label="AAT home"><img src="assets/logo.svg" width="40" height="40" alt="" /><span>AAT <span class="wm-sub">Admin Annotation Tool</span></span></a>
+        <nav class="nav" aria-label="Sections">
+          <a class="t" href="#how">How it works</a>
+          <a class="t" href="#prompt">The prompt</a>
+          <a class="t" href="#install">Install</a>
+          <a class="gh press" href="https://github.com/adigold/AAT-Tool">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
+            GitHub
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <div class="hi">Open source, for apps built with AI coding agents</div>
+          <h1><span class="circled">Point<svg viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M26 62 C 12 28, 80 8, 128 10 C 182 13, 198 40, 186 64 C 172 90, 98 94, 52 84 C 26 78, 12 64, 30 46"/></svg></span> at your app. Get a prompt your coding agent can act on.</h1>
+          <p class="sub">AAT is a tiny floating tool for admins. Pin a note on any element, or circle things with a red pen. Each note becomes a ready prompt with the exact elements, selectors, React components, styles and a marked screenshot.</p>
+          <div class="ctas">
+            <a class="btn press" href="https://github.com/adigold/AAT-Tool">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
+              View on GitHub
+            </a>
+            <a class="btn ghost press" href="#how">How it works</a>
+          </div>
+        </div>
+
+        <div class="art" aria-hidden="true">
+          <div class="win box">
+            <div class="chrome"><b></b><b></b><b></b><span>localhost:3000/pricing</span></div>
+            <div class="pg">
+              <div class="h"></div>
+              <div class="ln" style="width:88%"></div>
+              <div class="ln" style="width:72%"></div>
+              <div class="ln" style="width:80%"></div>
+              <span class="cta">Start free trial<span class="mark"></span><span class="pin dot" style="position:absolute;margin:0;right:-14px;top:-14px;left:auto">1</span></span>
+            </div>
+          </div>
+          <div class="tray">
+            <b class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></b>
+            <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.4 3.6a1 1 0 0 1 3 3L7.4 18.6a2 2 0 0 1-.9.5l-2.9.8a.5.5 0 0 1-.6-.6l.8-2.9a2 2 0 0 1 .5-.9z"/></svg></b>
+            <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"/></svg></b>
+          </div>
+          <div class="note box">
+            <div class="hd"><span class="dot" style="position:static;margin:0;width:20px;height:20px;font-size:10px">1</span>&lt;button&gt; "Start free trial"</div>
+            <p>Make this button bigger and use our brand color</p>
+            <span class="ok">Prompt copied</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chips" aria-label="Built for">
+        <span class="chip">Next.js App Router</span>
+        <span class="chip">React 18+</span>
+        <span class="chip">Tailwind CSS v4</span>
+        <span class="chip">Claude Code skill</span>
+        <span class="chip">MIT license</span>
+      </div>
+
+      <div class="demo">
+        <div class="frame box">
+          <video id="demo" muted playsinline preload="metadata" poster="assets/aat-demo-poster.png" aria-label="Demo: the admin opens the AAT tray, pins the Start free trial button, types a comment and presses Enter. The prompt with a marked screenshot is copied, then the agent makes the change.">
+            <source src="assets/aat-demo.mp4" type="video/mp4" />
+          </video>
+          <button class="replay" id="replay" type="button" aria-label="Play the demo again">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            Play again
+          </button>
+        </div>
+        <p class="caption">24 seconds, no sound. A sample pricing page with AAT open.</p>
+      </div>
+    </div>
+
+    <section id="how" aria-labelledby="how-h">
+      <div class="wrap">
+        <span class="tag">How it works</span>
+        <h2 id="how-h">Three steps. No screenshots to mark up by hand.</h2>
+        <div class="steps">
+          <div class="step box"><div class="pin" aria-hidden="true">1</div><h3>Pin or draw.</h3><p>Click any element to pin a note, or draw over an area with the red pen. A closed loop takes everything inside it.</p></div>
+          <div class="step box"><div class="pin" aria-hidden="true">2</div><h3>Write what should change.</h3><p>Type your comment and press Enter.</p></div>
+          <div class="step box"><div class="pin" aria-hidden="true">3</div><h3>Paste into your agent.</h3><p>The prompt is already on your clipboard, with a screenshot of the spot and your mark drawn in red.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="try" aria-labelledby="try-h">
+      <div class="wrap">
+        <span class="tag">Try it</span>
+        <h2 id="try-h">Annotate a dashboard, right here.</h2>
+        <p class="lead">The full widget on a demo admin dashboard: tray, pin, pen, comment box, pins that stay, the notes panel and a real marked screenshot.</p>
+        <div class="try box">
+          <div class="try-stage" id="stage">
+            <iframe id="pg" src="playground/index.html" title="Playground: a demo admin dashboard you can annotate"></iframe>
+          </div>
+          <div class="try-out">
+            <div class="bar"><span>The prompt AAT builds</span><button class="copy" id="copyTry" type="button" disabled>Copy</button></div>
+            <pre id="out" aria-live="polite"><span class="empty">Open the tray on the dashboard's right edge. Pick the pin and click anything, or pick the pen and circle a few things. Write what should change and press Enter. The prompt, and the screenshot with your mark, appear here.</span></pre>
+            <div class="outshot" id="outShot" hidden></div>
+          </div>
+        </div>
+        <p class="note">With the tray closed you can play with the page. This playground is a plain JavaScript port of the widget; inside a Next.js app in development, AAT also lists the React components. Notes stay in this browser.</p>
+      </div>
+    </section>
+
+    <section id="prompt" aria-labelledby="prompt-h">
+      <div class="wrap">
+        <span class="tag">The output</span>
+        <h2 id="prompt-h">What the prompt looks like.</h2>
+        <p class="lead">Plain text with the facts an agent needs to find the element in your codebase.</p>
+        <div class="code box">
+          <div class="bar"><span><span class="dots" aria-hidden="true"><b></b><b></b><b></b></span>Copied to your clipboard</span><button class="copy" id="copyEx" type="button">Copy</button></div>
+<pre id="ex"><b>[AAT note 1] Change request for my app</b>
+
+I pinned one element on the page and wrote a comment about it.
+
+<mark>My comment: Make this button bigger and use our brand color</mark>
+
+Page: http://localhost:3000/pricing ("Pricing")
+Viewport: 1440x900
+<mark>Screenshot of the marked spot, with my mark drawn in red: .data/aat/aat-m2x9k1-4f2a.png</mark>
+
+Element: &lt;button&gt; "Start free trial"
+  <mark>Selector: main &gt; section:nth-of-type(2) &gt; div &gt; button</mark>
+  <mark>React components (innermost first): Button &lt; PricingCard &lt; PricingPage</mark>
+  Attributes: type="button"
+  Classes: rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white
+  Size: 148x36px at x 812, y 640 (page)
+  <mark>Current style: font: Inter 14px, weight 500, line-height 20px; color: #ffffff; background: #18181b; padding: 8px 16px; radius: 8px</mark>
+
+Find these elements in the codebase (search for the visible text, the React component names and the classes), make the change my comment asks for, and keep everything else exactly as it is. If the comment is unclear, ask me before changing anything.</pre>
+        </div>
+        <p class="quote">No more "the button on the right, no, the other one".</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="feat-h">
+      <div class="wrap">
+        <span class="tag">Features</span>
+        <h2 id="feat-h">Small tool, the right details.</h2>
+        <div class="feats">
+          <div class="feat box"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></div><h3>Pin and pen.</h3><p>Pin one element, or draw over many.</p></div>
+          <div class="feat box"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg></div><h3>Agent-ready prompts.</h3><p>Selectors, React components, classes and current styles, in plain text.</p></div>
+          <div class="feat box"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></div><h3>Marked screenshots.</h3><p>Cropped around your mark, saved into your project on localhost.</p></div>
+          <div class="feat box"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><h3>Pins that stay put.</h3><p>Notes reappear on their element after reload and follow it while scrolling.</p></div>
+          <div class="feat box"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"/></svg></div><h3>Batch it.</h3><p>Copy every note on a page, or all of them, as one prompt.</p></div>
+          <div class="feat box"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div><h3>Safe by design.</h3><p>Admin only, never downloaded by visitors, never changes your page, notes stay in your browser.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" aria-labelledby="install-h">
+      <div class="wrap narrow">
+        <span class="tag">Install</span>
+        <h2 id="install-h">Add it in one sentence.</h2>
+        <p class="lead">AAT ships as a Claude Code skill. Copy it into your skills folder and ask Claude Code to add it.</p>
+        <div class="shell"><button class="copy" id="copyCmd" type="button">Copy</button><span class="p">$ </span><span id="cmd">git clone https://github.com/adigold/AAT-Tool.git ~/.claude/skills/admin-annotation-tool</span></div>
+        <div class="ask">Then, in your project: <code>"Add AAT to this app"</code></div>
+        <p class="small">Prefer doing it by hand? Follow <a href="https://github.com/adigold/AAT-Tool/blob/main/SKILL.md">SKILL.md</a> in the repo. Requires Next.js App Router, React and Tailwind CSS v4.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="bar box">
+        <span>Open source, MIT license.</span>
+        <span><a href="https://github.com/adigold/AAT-Tool">GitHub</a> · Made by <a href="https://github.com/adigold">Adi Goldstein</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Sticky header hairline
+
+    // Demo video: plays once when it comes into view, never loops. Respects reduced motion.
+    const video = document.getElementById("demo");
+    const replay = document.getElementById("replay");
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let started = false;
+    if (reduce) { video.controls = true; }
+    else if ("IntersectionObserver" in window) {
+      new IntersectionObserver((entries, io) => {
+        if (entries.some((e) => e.isIntersecting) && !started) { started = true; video.play().catch(() => { video.controls = true; }); io.disconnect(); }
+      }, { threshold: 0.4 }).observe(video);
+    }
+    video.addEventListener("ended", () => replay.classList.add("show"));
+    replay.addEventListener("click", () => { replay.classList.remove("show"); video.currentTime = 0; video.play(); });
+
+    // Copy buttons
+    const copyText = async (text, btn) => {
+      try { await navigator.clipboard.writeText(text); btn.textContent = "Copied"; } catch { btn.textContent = "Blocked"; }
+      setTimeout(() => (btn.textContent = "Copy"), 1600);
+    };
+    document.getElementById("copyEx").onclick = (e) => copyText(document.getElementById("ex").innerText, e.currentTarget);
+    document.getElementById("copyCmd").onclick = (e) => copyText(document.getElementById("cmd").innerText, e.currentTarget);
+
+  </script>
+  <script src="aat-lite.js" defer></script>
+</body>
+</html>

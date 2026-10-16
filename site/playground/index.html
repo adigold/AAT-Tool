@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Acme admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #0e0e10; --panel: #161618; --panel2: #1c1c1f; --line: #26262a; --ink: #ededef; --ink2: #a1a1aa; --mute: #6b6b74; --hi: #ffffff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { background: var(--bg); color: var(--ink); font: 13px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; display: flex; overflow: hidden; }
+    .side { flex: 0 0 52px; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0; background: #0b0b0d; }
+    .logo { width: 28px; height: 28px; border-radius: 8px; background: var(--hi); color: #0e0e10; display: grid; place-items: center; font-weight: 700; font-size: 13px; margin-bottom: 10px; }
+    .nav { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--mute); }
+    .nav.on { background: var(--panel2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+    .nav svg { width: 17px; height: 17px; }
+    .main { flex: 1; min-width: 0; padding: 16px 64px 16px 18px; overflow: auto; }
+    .top { display: flex; align-items: center; gap: 10px; }
+    .top h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    .crumb { color: var(--mute); font-size: 12px; }
+    .search { margin-left: auto; display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--mute); background: var(--panel); font-size: 12px; }
+    .search svg { width: 13px; height: 13px; }
+    .kpis { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px; }
+    .kpi .l { color: var(--ink2); font-size: 11.5px; }
+    .kpi .v { margin-top: 4px; font-size: 21px; font-weight: 600; letter-spacing: -0.02em; }
+    .kpi .d { margin-top: 2px; font-size: 11px; color: var(--mute); }
+    .kpi .d b { color: var(--ink); font-weight: 500; }
+    .row { margin-top: 10px; display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px; }
+    .card h2 { margin: 0; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+    .card h2 span { color: var(--mute); font-weight: 400; font-size: 11px; }
+    .bars { margin-top: 14px; height: 108px; display: flex; align-items: flex-end; gap: 7px; border-bottom: 1px solid var(--line); }
+    .bars i { flex: 1; border-radius: 4px 4px 0 0; background: #3a3a40; }
+    .bars i.hi { background: var(--hi); }
+    .days { display: flex; gap: 7px; margin-top: 5px; color: var(--mute); font-size: 10px; }
+    .days span { flex: 1; text-align: center; }
+    .plan { display: flex; align-items: center; gap: 8px; margin-top: 11px; font-size: 12px; color: var(--ink2); }
+    .plan .bar { flex: 1; height: 6px; border-radius: 99px; background: var(--panel2); overflow: hidden; }
+    .plan .bar i { display: block; height: 100%; background: #d4d4d8; border-radius: 99px; }
+    .plan b { color: var(--ink); font-weight: 500; width: 30px; text-align: right; }
+    .btn { margin-top: 14px; width: 100%; height: 32px; border-radius: 8px; border: 0; background: var(--hi); color: #0e0e10; font: 600 12.5px Inter, sans-serif; cursor: pointer; }
+    table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; color: var(--mute); font-weight: 500; font-size: 11px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    td { padding: 7px 0; border-bottom: 1px solid var(--line); color: var(--ink2); }
+    td:first-child { color: var(--ink); }
+    tr:last-child td { border-bottom: 0; }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 11px; border: 1px solid var(--line); color: var(--ink2); }
+    .pill.on { color: var(--ink); background: var(--panel2); }
+    .av { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2a2a2f; color: var(--ink); font-size: 10px; font-weight: 600; margin-right: 8px; vertical-align: -5px; }
+    @media (max-width: 460px) { .kpis { grid-template-columns: 1fr 1fr; } .kpis .card:last-child { display: none; } .row { grid-template-columns: 1fr; } .search span { display: none; } }
+  </style>
+</head>
+<body>
+  <aside class="side" aria-label="Navigation">
+    <div class="logo">A</div>
+    <span class="nav on" title="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>
+    <span class="nav" title="Customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span>
+    <span class="nav" title="Billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+    <span class="nav" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><div class="crumb">Acme admin</div><h1>Overview</h1></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Search</span></div>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="l">Revenue</div><div class="v">$48,210</div><div class="d"><b>+12.4%</b> this month</div></div>
+      <div class="card kpi"><div class="l">Active users</div><div class="v">2,341</div><div class="d"><b>+318</b> this week</div></div>
+      <div class="card kpi"><div class="l">Churn</div><div class="v">1.8%</div><div class="d">down from 2.1%</div></div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>Signups <span>Last 7 days</span></h2>
+        <div class="bars" aria-label="Signups per day"><i style="height:42%"></i><i style="height:58%"></i><i style="height:36%"></i><i style="height:71%"></i><i style="height:64%"></i><i class="hi" style="height:92%"></i><i style="height:55%"></i></div>
+        <div class="days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      </div>
+      <div class="card">
+        <h2>Plans</h2>
+        <div class="plan">Free<div class="bar"><i style="width:62%"></i></div><b>62%</b></div>
+        <div class="plan">Pro<div class="bar"><i style="width:29%"></i></div><b>29%</b></div>
+        <div class="plan">Team<div class="bar"><i style="width:9%"></i></div><b>9%</b></div>
+        <button class="btn" type="button">Export report</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <h2>Recent customers <span>View all</span></h2>
+      <table>
+        <thead><tr><th>Name</th><th>Plan</th><th>Joined</th></tr></thead>
+        <tbody>
+          <tr><td><span class="av">MR</span>Maya Rosen</td><td><span class="pill on">Pro</span></td><td>Today</td></tr>
+          <tr><td><span class="av">JL</span>Jonas Lee</td><td><span class="pill">Free</span></td><td>Yesterday</td></tr>
+          <tr><td><span class="av">SK</span>Sara Katz</td><td><span class="pill on">Team</span></td><td>2 days ago</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

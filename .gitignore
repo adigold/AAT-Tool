@@ -1,0 +1,25 @@
+# OS and editors
+.DS_Store
+.vscode/
+.idea/
+
+# Dependencies and build output
+node_modules/
+.next/
+dist/
+
+# AAT screenshots saved on localhost
+.data/
+
+# Demo video project (HyperFrames): keep the source, ignore renders and tool caches
+demo-video/renders/
+demo-video/.hyperframes/
+demo-video/CLAUDE.md
+demo-video/AGENTS.md
+
+# Local env files
+.env
+.env.*
+
+# Private, not part of the project
+Proposal Letter/
